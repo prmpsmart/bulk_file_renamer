@@ -3,6 +3,7 @@ from shutil import move
 from string import ascii_letters, digits
 from time import ctime, strptime, strftime
 
+__all__ = ["bulk_file_renamer", "renamer"]
 date_formats = dict(
     year="%Y",
     month="%m",
@@ -15,7 +16,7 @@ date_formats = dict(
 
 def bulk_file_renamer(
     filenames: list[str],
-    new_basename: str='',
+    new_basename: str = "",
     # change_destination
     destination_folder: str = "",
     # change_extension
@@ -35,9 +36,9 @@ def bulk_file_renamer(
     remove_characters: str = "",
     # remove_multiple_characters
     remove_multiple_characters: list[str] = [],
-    # trim_whitespaces
-    trim_whitespaces_start_n_end: bool = False,
-    trim_whitespaces_all: bool = False,
+    # remove_whitespaces
+    remove_whitespaces_start_n_end: bool = False,
+    remove_whitespaces_all: bool = False,
     # remove_characters_by_type
     remove_all_numbers: bool = False,
     remove_all_letters: bool = False,
@@ -86,10 +87,10 @@ def bulk_file_renamer(
                 add_index = len(name) - add_position
             name = name[:add_index] + add_characters + name[add_index:]
 
-        # trim_whitespaces
-        if trim_whitespaces_start_n_end:
+        # remove_whitespaces
+        if remove_whitespaces_start_n_end:
             name = name.strip()
-        elif trim_whitespaces_all:
+        elif remove_whitespaces_all:
             name = name.replace(" ", "")
 
         # replace_characters
@@ -185,12 +186,14 @@ def bulk_file_renamer(
         name += ext
 
         # change_destination
-        if destination_folder:
-            name = path.join(destination_folder, name)
+        destination_folder = destination_folder or path.dirname(filename)
 
-        new_filenames.append(filename, name)
-    
+        name = path.join(destination_folder, name)
+
+        new_filenames.append((filename, name))
+
     return new_filenames
+
 
 def renamer(filenames: list[str], **kwargs):
     lists = bulk_file_renamer(filenames, **kwargs)

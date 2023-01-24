@@ -1,5 +1,5 @@
 from os import path, rename
-from shutil import move
+from shutil import copy2
 from string import ascii_letters, digits
 from time import ctime, strptime, strftime
 
@@ -66,7 +66,7 @@ def bulk_file_renamer(
     auto_indexing_separator: str = "",
     auto_indexing_before: bool = True,
     auto_indexing_zero_padding: int = 0,
-) -> list[tuple]:
+) -> list[tuple[str, str]]:
     new_filenames: list[tuple] = []
 
     for index, filename in enumerate(filenames):
@@ -76,7 +76,7 @@ def bulk_file_renamer(
 
         # change_extension
         ext = extension or ext
-        if not ext.startswith("."):
+        if ext and not ext.startswith("."):
             ext = "." + ext
 
         # add_characters
@@ -164,13 +164,16 @@ def bulk_file_renamer(
         if add_date:
             time_obj = strptime(ctime(path.getmtime(filename)))
             date = add_date_separator.join(
-                [strftime(format, time_obj) for format in add_date_formats]
+                [
+                    strftime(date_formats[format], time_obj)
+                    for format in add_date_formats
+                ]
             )
 
             if add_date_before:
-                name = date + name
+                name = f"{date}{add_date_separator}{name}"
             else:
-                name += date
+                name += f"{add_date_separator}{date}"
 
         # auto_indexing
         if auto_indexing:
@@ -185,17 +188,27 @@ def bulk_file_renamer(
 
         name += ext
 
-        # change_destination
-        destination_folder = destination_folder or path.dirname(filename)
+        folder = path.dirname(filename)
 
-        name = path.join(destination_folder, name)
+        # change_destination
+        if path.exists(destination_folder):
+            folder = destination_folder
+
+        name = path.join(folder, name)
 
         new_filenames.append((filename, name))
 
     return new_filenames
 
 
-def renamer(filenames: list[str], **kwargs):
-    lists = bulk_file_renamer(filenames, **kwargs)
+def renamer(
+    filenames: list[str] = [],
+    copy: bool = True,
+    lists: list[tuple[str, str]] = [],
+    **kwargs,
+):
+    lists = lists or bulk_file_renamer(filenames, **kwargs)
+    func = copy2 if copy else rename
     for filename, new_filename in lists:
-        rename(filename, new_filename)
+        if path.exists(filename):
+            func(filename, new_filename)

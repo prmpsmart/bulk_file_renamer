@@ -1,4 +1,4 @@
-import site
+import site, os
 
 site.addsitedir("../prmp_qt")
 
@@ -92,7 +92,7 @@ class DestinationFolder(Option):
         browse.clicked.connect(self.browse)
         self.addWidget(browse)
 
-        self.destination_folder = LineEdit(placehoder="Folder ...")
+        self.destination_folder = LineEdit(placeholder="Folder ...")
         self.addWidget(self.destination_folder)
 
     def browse(self):
@@ -112,7 +112,7 @@ class BaseName(Option):
             "Enable to set a new base name for all files.\nThis will replace the original name:",
         )
 
-        self.new_basename = LineEdit(placehoder="New Base Name ...")
+        self.new_basename = LineEdit(placeholder="New Base Name ...")
         self.addWidget(self.new_basename)
 
     def values(self):
@@ -160,7 +160,7 @@ class IntBox(HFrame, _Base):
 
     @property
     def value(self):
-        return int(self.number.text())
+        return int(self.number.text() or 0)
 
     def setValue(self, value: int):
         self.number.setText(str(value))
@@ -191,7 +191,7 @@ class AutoIndexing(Option):
         form = QFormLayout()
         self.frame_lay.addLayout(form)
 
-        self.separator = LineEdit(placehoder="_")
+        self.separator = LineEdit(placeholder="_")
         form.addRow("Separator:", self.separator)
 
         self.before_after = YesNo("Before name", "After name")
@@ -237,7 +237,7 @@ class Capitalization(Option):
     def values(self):
         return dict(
             lower=self.lower_case.isChecked(),
-            uper=self.uper_case.isChecked(),
+            upper=self.uper_case.isChecked(),
             sentence=self.sentence_case.isChecked(),
         )
 
@@ -246,7 +246,7 @@ class Extension(Option):
     def __init__(self) -> None:
         super().__init__("Change Extension", "Change the extension of the files:")
 
-        self.extension = LineEdit(placehoder="New Extension ...")
+        self.extension = LineEdit(placeholder="New Extension ...")
         self.addWidget(self.extension)
 
     def values(self):
@@ -257,7 +257,7 @@ class AddPrefix(Option):
     def __init__(self) -> None:
         super().__init__("Add Prefix", "Add prefix before the base name:")
 
-        self.prefix = LineEdit(placehoder="Prefix ...")
+        self.prefix = LineEdit(placeholder="Prefix ...")
         self.addWidget(self.prefix)
 
     def values(self):
@@ -268,7 +268,7 @@ class AddSuffix(Option):
     def __init__(self) -> None:
         super().__init__("Add Suffix", "Add suffix after the base name:")
 
-        self.suffix = LineEdit(placehoder="Suffix ...")
+        self.suffix = LineEdit(placeholder="Suffix ...")
         self.addWidget(self.suffix)
 
     def values(self):
@@ -285,7 +285,7 @@ class AddDate(Option):
         self.before_after = YesNo("Before name", "After name")
         form.addRow("Date Position:", self.before_after)
 
-        self.separator = LineEdit(placehoder="-")
+        self.separator = LineEdit(placeholder="-")
         form.addRow("Separator:", self.separator)
 
         vlay = QVBoxLayout()
@@ -301,7 +301,7 @@ class AddDate(Option):
 
             for _ in l:
                 button = ComboBox()
-                button.addItems(ls[0] + ls[1])
+                button.addItems([''] + ls[0] + ls[1])
                 hlay.addWidget(button)
                 self.buttons.append(button)
 
@@ -333,7 +333,7 @@ class AddCharacters(Option):
         self.start_end = YesNo("Start", "End")
         form.addRow("Count from:", self.start_end)
 
-        self.characters = LineEdit(placehoder="-")
+        self.characters = LineEdit(placeholder="-")
         form.addRow("Characters:", self.characters)
 
         self.position = IntBox()
@@ -373,7 +373,7 @@ class RemoveCharacters(Option):
             "Remove characters", "Remove characters or words from the name:"
         )
 
-        self.characters = LineEdit(placehoder="Characters to be deleted ...")
+        self.characters = LineEdit(placeholder="Characters to be deleted ...")
         self.addWidget(self.characters)
 
     def values(self):
@@ -387,7 +387,7 @@ class RemoveMultipleCharacters(Option):
             "Remove multiple characters separated by comman (,):",
         )
 
-        self.characters = LineEdit(placehoder="Example: a, 3, |, =")
+        self.characters = LineEdit(placeholder="Example: a, 3, |, =")
         self.addWidget(self.characters)
 
     def values(self):
@@ -435,7 +435,7 @@ class RemoveCharactersAtPosition(Option):
 
         self.first_button = RadioButton("First")
         hlay.addWidget(self.first_button)
-        self.first = LineEdit(placehoder="#")
+        self.first = LineEdit(placeholder="#")
         self.first.setValidator(IntBox.validator)
         hlay.addWidget(self.first)
         hlay.addWidget(Label("characters"))
@@ -447,7 +447,7 @@ class RemoveCharactersAtPosition(Option):
 
         self.last_button = RadioButton("Last")
         hlay.addWidget(self.last_button)
-        self.last = LineEdit(placehoder="#")
+        self.last = LineEdit(placeholder="#")
         self.last.setValidator(IntBox.validator)
         hlay.addWidget(self.last)
 
@@ -462,13 +462,13 @@ class RemoveCharactersAtPosition(Option):
         self.custom_range = RadioButton("Custom range:")
         hlay.addWidget(self.custom_range)
 
-        self.from_ = LineEdit()
+        self.from_ = LineEdit(placeholder="start")
         self.from_.setValidator(IntBox.validator)
         hlay.addWidget(self.from_)
 
         hlay.addWidget(Label("to"))
 
-        self.to = LineEdit()
+        self.to = LineEdit(placeholder="end")
         self.to.setValidator(IntBox.validator)
         hlay.addWidget(self.to)
 
@@ -499,15 +499,25 @@ class RemoveCharactersAtPosition(Option):
 class ReplaceCharacters(Option):
     def __init__(self) -> None:
         super().__init__(
-            "Remove multiple characters",
-            "Remove multiple characters separated by comman (,):",
+            "Replace characters",
+            "Replace characters or words:",
         )
 
-        self.characters = LineEdit(placehoder="Example: a, 3, |, =")
-        self.addWidget(self.characters)
+        hlay = QHBoxLayout()
+        self.frame_lay.addLayout(hlay)
+
+        self.old = LineEdit(placeholder="old")
+        hlay.addWidget(self.old)
+
+        hlay.addWidget(Label("to"))
+
+        self.new = LineEdit(placeholder="new")
+        hlay.addWidget(self.new)
 
     def values(self):
-        return dict(remove_multiple_characters=self.characters.text())
+        return dict(
+            replace_characters=self.old.text(), characters_replacement=self.new.text()
+        )
 
 
 class Item(Button):
@@ -551,12 +561,17 @@ class Preview(Scrollable):
         lay.addItem(self.spacer)
 
     def remove_files(self):
+        lay = self.widgetLayout()
         files = []
-        values = self.items.values()
+        values = list(self.items.values())
         for item in values:
             if item.isChecked():
                 files.append(item.file)
                 del self.items[item.file]
+                lay.removeWidget(item)
+                item.deleteLater()
+        self.widget().update()
+        self.update()
         return files
 
 
@@ -564,6 +579,7 @@ class Output(Base):
     def __init__(self, home: "Home", **kwargs) -> None:
         super().__init__(**kwargs)
         self.home = home
+
         hlay = QHBoxLayout()
         self.lay.addLayout(hlay)
 
@@ -574,6 +590,19 @@ class Output(Base):
         remove_files = Button("Remove Files", objectName="red")
         remove_files.clicked.connect(self.remove_files)
         hlay.addWidget(remove_files)
+
+        hlay.addStretch()
+
+        self.copy = QRadioButton("Copy")
+        self.copy.setChecked(True)
+        hlay.addWidget(self.copy)
+
+        move = QRadioButton("Move")
+        hlay.addWidget(move)
+
+        save_files = Button("Save Files", objectName="red")
+        save_files.clicked.connect(self.save_files)
+        hlay.addWidget(save_files)
 
         self.preview = Preview()
         self.lay.addWidget(self.preview)
@@ -587,6 +616,9 @@ class Output(Base):
         files = self.preview.remove_files()
         for file in files:
             self.home.files.remove(file)
+
+    def save_files(self):
+        self.home.save(copy=self.copy.isChecked())
 
 
 class Options(Base):
@@ -614,6 +646,7 @@ class Home(HFrame):
         super().__init__()
 
         self.files: list[str] = []
+        self.previews: list[tuple[str, str]] = []
 
         self.setWindowTitle("Bulk File Renamer")
         lay = self.layout()
@@ -711,6 +744,11 @@ class Home(HFrame):
     def toggle_remove(self, toggle: bool):
         self.remove.setVisible(toggle)
 
+    def save(self, copy: bool):
+        if self.previews:
+            renamer(lists=self.previews, copy=copy)
+            QMessageBox.information(self, 'Bulk rename successful.', f'The {len(self.previews)} files have been bulk renamed successfully.')
+
     @property
     def options(self):
         values = {}
@@ -725,11 +763,17 @@ class Home(HFrame):
 
     def updatePreview(self, files: list[str] = []):
         files = files or self.files
-        previews = bulk_file_renamer(files, **self.options)
-        self.output.preview.preview(previews)
+        self.previews = bulk_file_renamer(files, **self.options)
+        self.output.preview.preview(self.previews)
 
     def showEvent(self, event: QShowEvent) -> None:
         self.move(20, 10)
+        files = []
+        for l in os.listdir('test'):
+            l = os.path.join('test', l)
+            if os.path.isfile(l):
+                files.append(l)
+        self.add_files(files)
 
 
 class App(QApplication):
